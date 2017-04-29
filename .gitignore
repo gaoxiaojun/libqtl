@@ -1,6 +1,7 @@
 *.swp
 *.[oa]
 *.l[oa]
+*.out
 *.opensdf
 *.orig
 *.pyc

@@ -68,7 +68,12 @@ QTL_EXTERN datetime_t datetime_from_timeval(struct timeval *t);
 QTL_EXTERN int datetime_from_iso8601(const char *str, size_t len, datetime_t *dt);
 QTL_EXTERN void datetime_decode(datetime_t dt, uint16_t *year, uint16_t *month, uint16_t *day, uint16_t *hour, uint16_t *minute, uint16_t *second, uint32_t *usec);
 QTL_EXTERN int datetime_to_tm(const datetime_t dt, struct tm *tmp);
-QTL_EXTERN size_t datetime_format(char *dst, size_t len, datetime_t dt);
+QTL_EXTERN size_t datetime_format(char *dst, size_t len, datetime_t dt, long offset /* see timeout_offset */);
+/* return timezone offset from utc, in minutes [-1439,1439] */
+QTL_EXTERN long get_timezone_offset(void);
+QTL_EXTERN void qtl_timezone_update(void);
+QTL_EXTERN datetime_t datetime_now(void);
+
 #ifdef __cplusplus
 }
 #endif

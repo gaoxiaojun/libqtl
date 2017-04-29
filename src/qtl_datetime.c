@@ -366,7 +366,7 @@ timestamp_format_internal(char *dst, size_t len, const datetime_t dt, int32_t zo
  */
 
 size_t
-datetime_format(char *dst, size_t len, datetime_t dt) {
+datetime_format(char *dst, size_t len, datetime_t dt, long offset) {
     uint32_t f;
     int precision;
 
@@ -378,5 +378,113 @@ datetime_format(char *dst, size_t len, datetime_t dt) {
         else if ((f %    1000) == 0) precision = 6;
         else                         precision = 9;
     }
-    return timestamp_format_internal(dst, len, dt, 0, precision);
+    return timestamp_format_internal(dst, len, dt, offset, precision);
+}
+
+#ifdef _WIN32
+void gettimeofday(struct timeval *tp, void *) {
+  uint64_t intervals;
+  FILETIME ft;
+
+  GetSystemTimeAsFileTime(&ft);
+
+  /*
+   * A file time is a 64-bit value that represents the number
+   * of 100-nanosecond intervals that have elapsed since
+   * January 1, 1601 12:00 A.M. UTC.
+   *
+   * Between January 1, 1970 (Epoch) and January 1, 1601 there were
+   * 134774 days,
+   * 11644473600 seconds or
+   * 11644473600,000,000,0 100-nanosecond intervals.
+   *
+   * See also MSKB Q167296.
+   */
+
+  intervals = ((uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+  intervals -= 116444736000000000;
+
+  tp->tv_sec = (long)(intervals / 10000000);
+  tp->tv_usec = (long)((intervals % 10000000) / 10);
+}
+#endif // _WIN32
+
+#ifdef _WIN32
+long _gettimezone(void)
+{
+    uin32_t n;
+    TIME_ZONE_INFORMATION tz;
+
+    n = GetTimeZoneInfomation(&tz);
+
+    switch(n) {
+    case TIME_ZONE_ID_UNKNOWN:
+         return -tz.Bias;
+
+     case TIME_ZONE_ID_STANDARD:
+         return -(tz.Bias + tz.StandardBias);
+
+     case TIME_ZONE_ID_DAYLIGHT:
+         return -(tz.Bias + tz.DaylightBias);
+
+     default: /* TIME_ZONE_ID_INVALID */
+         return 0;
+    }
+}
+int32_t get_timezone_offset(void)
+{
+    return _gettimezone() * 60;
+}
+
+void qtl_timezone_update(void)
+{
+}
+
+#else
+void
+qtl_timezone_update(void)
+{
+#if (__FreeBSD__)
+
+    if (getenv("TZ")) {
+        return;
+    }
+
+    putenv("TZ=UTC");
+
+    tzset();
+
+    unsetenv("TZ");
+
+    tzset();
+
+#elif (__linux__)
+    time_t      s;
+    struct tm  *t;
+    char        buf[4];
+
+    s = time(0);
+
+    t = localtime(&s);
+
+    strftime(buf, 4, "%H", t);
+
+#endif
+}
+
+long get_timezone_offset(void)
+{
+    time_t sec;
+    struct tm tm;
+    localtime_r(&sec, &tm);
+    return tm.tm_gmtoff / 60;
+}
+#endif
+
+datetime_t datetime_now(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uint64_t intervals = tv.tv_sec * TICKS_PER_SECOND + tv.tv_usec + EPOCH_DATE_TIME;
+    return intervals;
 }
