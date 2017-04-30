@@ -8,27 +8,33 @@
  * License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.       *
  ******************************************************************************/
 
-#include "qtl_version.h"
+#ifndef __EVENT_TREE_H__
+#define __EVENT_TREE_H__
 
-#define QTL_STRINGIFY(v) QTL_STRINGIFY_HELPER(v)
-#define QTL_STRINGIFY_HELPER(v) #v
+#include <qtl.h>
+#include "qtl_event.h"
+#include <assert.h>
+#include "qtl_queue.h"
 
-#define QTL_VERSION_STRING_BASE  QTL_STRINGIFY(QTL_VERSION_MAJOR) "." \
-                                QTL_STRINGIFY(QTL_VERSION_MINOR) "." \
-                                QTL_STRINGIFY(QTL_VERSION_PATCH)
+typedef struct tree_node_s tree_node_t;
 
-#if QTL_VERSION_IS_RELEASE
-# define QTL_VERSION_STRING  QTL_VERSION_STRING_BASE
-#else
-# define QTL_VERSION_STRING  QTL_VERSION_STRING_BASE "-" QTL_VERSION_SUFFIX
-#endif
+typedef struct event_tree_s {
+  tree_node_t *root;
+  tree_node_t *last;
+} event_tree_t;
 
+inline int event_tree_init(event_tree_t *tree);
 
-unsigned int qtl_version(void) {
-  return QTL_VERSION_HEX;
-}
+inline void event_tree_destory(event_tree_t *tree);
 
+inline bool event_tree_is_empty(event_tree_t *tree);
 
-const char* qtl_version_string(void) {
-  return QTL_VERSION_STRING;
-}
+inline event_t *event_tree_read(event_tree_t *tree);
+
+inline bool event_tree_add(event_tree_t *tree, event_queue_t *queue);
+
+inline void event_tree_remove(event_tree_t *tree, event_queue_t *queue);
+
+inline void event_tree_clear(event_tree_t *tree);
+
+#endif // __EVENT_TREE_H__

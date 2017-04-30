@@ -8,27 +8,25 @@
  * License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.       *
  ******************************************************************************/
 
-#include "qtl_version.h"
+#ifndef EVENT_PIPE_H
+#define EVENT_PIPE_H
 
-#define QTL_STRINGIFY(v) QTL_STRINGIFY_HELPER(v)
-#define QTL_STRINGIFY_HELPER(v) #v
+#include <stdint.h>
+#include <stdbool.h>
 
-#define QTL_VERSION_STRING_BASE  QTL_STRINGIFY(QTL_VERSION_MAJOR) "." \
-                                QTL_STRINGIFY(QTL_VERSION_MINOR) "." \
-                                QTL_STRINGIFY(QTL_VERSION_PATCH)
+#include "qtl_queue.h"
 
-#if QTL_VERSION_IS_RELEASE
-# define QTL_VERSION_STRING  QTL_VERSION_STRING_BASE
-#else
-# define QTL_VERSION_STRING  QTL_VERSION_STRING_BASE "-" QTL_VERSION_SUFFIX
-#endif
+typedef struct event_pipe_s event_pipe_t;
 
+event_pipe_t *event_pipe_new();
+void event_pipe_free(event_pipe_t *p);
 
-unsigned int qtl_version(void) {
-  return QTL_VERSION_HEX;
-}
+void event_pipe_add(event_pipe_t *p, event_queue_t *q);
+bool event_pipe_remove(event_pipe_t *p, event_queue_t *q);
 
+bool event_pipe_is_empty(event_pipe_t *p);
 
-const char* qtl_version_string(void) {
-  return QTL_VERSION_STRING;
-}
+event_t *event_pipe_read(event_pipe_t *p);
+void event_pipe_clear(event_pipe_t *p);
+
+#endif // EVENT_PIPE_H
